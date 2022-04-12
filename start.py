@@ -9,9 +9,9 @@ from random import randint
 
 
 # This block of code enables us to call the script from command line.
-def execute(token):
+def execute(token, query):
     try:
-        command = "python filtered_stream.py --token '%s' "%(token)
+        command = "python filtered_stream.py --token '%s' --query '%s' "%(token, query)
         print(command)
         os.system(command)
     except Exception as ex:
@@ -32,10 +32,21 @@ if __name__ == '__main__':
 
     num_of_token = len(token_list)
     
+    # query_list
+    with open('query_list.txt', 'r') as f:
+        query_list_txt = f.read().split(",")
+    
+    query_list =[]
+    for query in query_list_txt:
+        query=query.strip()
+        query_list.append(query)
+
+    
+    
         
     
     process_pool = multiprocessing.Pool(processes = num_of_token)
-    process_pool.map(execute,(token_list))
+    process_pool.map(execute,(token_list,query_list))
     process_pool.close()
     process_pool.join()
 

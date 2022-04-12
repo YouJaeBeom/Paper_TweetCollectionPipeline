@@ -4,16 +4,12 @@ import os
 import json
 from kafka import KafkaProducer
 from urllib3.exceptions import ProtocolError
-#bearer_token = os.environ.get("BEARER_TOKEN")
-#bearer_token = "AAAAAAAAAAAAAAAAAAAAAIYXGwEAAAAAaUcaAMc88Bjx9WRz%2BPzYRs6Co%2Bs%3DaLg9uUg5IbJ0F3CM7ivoKacwqqBwIaIsYe5xw4qdkykGh7Tmje"
-#bearer_token = "AAAAAAAAAAAAAAAAAAAAAIYXGwEAAAAA5y3mcPIze5%2BxhqNL0JwDHSUiI%2Fc%3DxSMxCUqFLcqCOYNht5PuwF6txgznmldEjaJtB7keCOZGyA5wSx"
-bearer_token = "AAAAAAAAAAAAAAAAAAAAAHyhPwEAAAAALKrI0h1Ct2Cz2Zupaym%2FlW4xd6U%3D1m5Gemz9PsV2bba7CA0Pn2A2R3SpZgzGS41EMhDW63zD2Bzvz6"
-#bearer_token = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 
-#bearer_token ="AAAAAAAAAAAAAAAAAAAAAGiFPQEAAAAAu7suubjKWeoDZ6WJnyn%2Bw%2BvzsTQ%3DOwureac7DLPKKfzomS4aIkZrvIMsiIseiYGM35NjLrG0DW908X"
+
 class Filteredstream(object):
-    def __init__(self, bearer_token):
+    def __init__(self, bearer_token, query):
         self.bearer_token = bearer_token
+        self.query = query
         
     def bearer_oauth(self,r):
         """
@@ -94,7 +90,6 @@ class Filteredstream(object):
             )
         for response_line in self.response.iter_lines():
             if response_line:
-                print("xx")
                 json_response = json.loads(response_line)
                 try:
                     refer=str(json_response['data']['referenced_tweets'][0]['type'])
@@ -125,9 +120,12 @@ class Filteredstream(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    
+    
     parser.add_argument("--token",help="setting token")
+    parser.add_argument("--query",help="setting query")
 
     args = parser.parse_args()
     
-    filtered_stream = Filteredstream(args.token)
+    filtered_stream = Filteredstream(args.token, args.query)
     filtered_stream.start_api()
