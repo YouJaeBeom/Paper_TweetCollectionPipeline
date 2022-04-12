@@ -9,7 +9,9 @@ from urllib3.exceptions import ProtocolError
 class Filteredstream(object):
     def __init__(self, bearer_token, query):
         self.bearer_token = bearer_token
-        self.query = query
+        self.query = "%s -is:retweet"%(query)
+        print("self.query",self.query)
+        
         
     def bearer_oauth(self,r):
         """
@@ -58,8 +60,9 @@ class Filteredstream(object):
     def set_rules(self,delete):
         print("start set_rules", self.bearer_token)
         # You can adjust the rules if needed
+        
         self.sample_rules = [
-            {"value": '"russia" -is:retweet'},
+            {"value": self.query},
         ]
         self.payload = {"add": self.sample_rules}
         self.response = requests.post(
@@ -114,7 +117,7 @@ class Filteredstream(object):
                 set = self.set_rules(self.delete)
                 self.get_stream(set)
             except Exception as es:
-                print("retry")
+                print("retry",es)
                 continue
 
 

@@ -46,7 +46,7 @@ if __name__ == '__main__':
         
     
     process_pool = multiprocessing.Pool(processes = num_of_token)
-    process_pool.map(execute,(token_list,query_list))
+    process_pool.starmap(execute, zip(token_list,query_list))
     process_pool.close()
     process_pool.join()
 
