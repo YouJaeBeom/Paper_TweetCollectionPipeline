@@ -95,12 +95,10 @@ class Filteredstream(object):
             if response_line:
                 json_response = json.loads(response_line)
                 try:
-                    refer=str(json_response['data']['referenced_tweets'][0]['type'])
-                    if str(refer) != "quoted":
-                        self.producer.send("tweet_api", json.dumps(json_response).encode('utf-8'))
-                        self.producer.flush()
-                        print(json_response)
-                        #print(json.dumps(json_response, sort_keys=True))
+                    self.producer.send("tweet_api", json.dumps(json_response).encode('utf-8'))
+                    self.producer.flush()
+                    print(json_response)
+                    #print(json.dumps(json_response, sort_keys=True))
                 except Exception as es:
                     self.producer.send("tweet_api", json.dumps(json_response).encode('utf-8'))
                     self.producer.flush()
