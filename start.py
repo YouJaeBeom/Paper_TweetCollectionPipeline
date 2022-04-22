@@ -6,9 +6,6 @@ import multiprocessing.pool
 import time
 from random import randint
 
-
-
-# This block of code enables us to call the script from command line.
 def execute(token, query):
     try:
         command = "python filtered_stream.py --token '%s' --query '%s' "%(token, query)
@@ -16,7 +13,6 @@ def execute(token, query):
         os.system(command)
     except Exception as ex:
         pass
-
 
 if __name__ == '__main__':
     start=time.time()
@@ -41,15 +37,10 @@ if __name__ == '__main__':
         query=query.strip()
         query_list.append(query)
 
-    
-    
-        
-    
     process_pool = multiprocessing.Pool(processes = num_of_token)
     process_pool.starmap(execute, zip(token_list,query_list))
     process_pool.close()
     process_pool.join()
-
 
 print("-------%s seconds -----"%(time.time()-start))
 
