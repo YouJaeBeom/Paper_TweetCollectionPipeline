@@ -1,0 +1,19 @@
+import socket
+import sys
+import requests
+import requests_oauthlib
+import json
+
+
+TCP_IP = '117.17.189.204'
+TCP_PORT = '11111'
+conn = None
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+s.bind((TCP_IP, TCP_PORT))
+s.listen(1)
+
+print("Waiting for TCP connection...")
+conn, addr = s.accept()
+
+print(conn,addr)

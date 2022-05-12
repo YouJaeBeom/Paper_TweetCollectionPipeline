@@ -1,13 +1,23 @@
 import argparse
+import socket
 import requests
 import os
 import json
 from kafka import KafkaProducer
 from urllib3.exceptions import ProtocolError
-
+import datetime
+import os
+import time
+from itertools import repeat
+import multiprocessing
+import multiprocessing.pool
+import time
+from random import randint
 
 class Filteredstream(object):
-    def __init__(self, bearer_token, query):
+    def __init__(self, bearer_token, query,addr,conn):
+        self.addr = addr
+        self.conn = conn
         self.bearer_token = bearer_token
         self.query = "%s -is:retweet"%(query)
         print("self.query",self.query)
@@ -77,10 +87,10 @@ class Filteredstream(object):
         print(json.dumps(self.response.json()))
 
 
-    def get_stream(self,set):
+    def get_stream(self,  set):
         print("start get_stream", self.bearer_token)
         self.producer = KafkaProducer(acks=0, compression_type='gzip', api_version=(0, 10, 1), bootstrap_servers=['117.17.189.205:9092','117.17.189.205:9093','117.17.189.205:9094'])
-
+        
         self.response = requests.get(
             "https://api.twitter.com/2/tweets/search/stream?tweet.fields=created_at&expansions=referenced_tweets.id", auth=self.bearer_oauth, stream=True,
         )
@@ -94,16 +104,20 @@ class Filteredstream(object):
         for response_line in self.response.iter_lines():
             if response_line:
                 json_response = json.loads(response_line)
+                json_response['start_timestamp'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+                print((json_response))
                 try:
-                    self.producer.send("tweet_api", json.dumps(json_response).encode('utf-8'))
-                    self.producer.flush()
-                    print(json_response)
-                    #print(json.dumps(json_response, sort_keys=True))
+                    self.conn.send((json.dumps(json_response)+"\n").encode('utf-8'))
                 except Exception as es:
-                    self.producer.send("tweet_api", json.dumps(json_response).encode('utf-8'))
+                    print("xxxxx",es)
+                    continue
+                try:
+                    self.producer.send("tweet", json.dumps(json_response).encode('utf-8'))
                     self.producer.flush()
-                    print(json_response)
-                    #print(json.dumps(json_response, sort_keys=True)) 
+                except Exception as es:
+                    print(es)
+                    self.producer.send("tweet", json.dumps(json_response).encode('utf-8'))
+                    self.producer.flush()
 
 
 
@@ -113,20 +127,64 @@ class Filteredstream(object):
                 self.rules = self.get_rules()
                 self.delete = self.delete_all_rules(self.rules)
                 set = self.set_rules(self.delete)
-                self.get_stream(set)
+                self.get_stream( set)
             except Exception as es:
                 print("retry",es)
                 continue
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    
-    
-    parser.add_argument("--token",help="setting token")
-    parser.add_argument("--query",help="setting query")
 
-    args = parser.parse_args()
+def execute(token, query,conn,addr):
+    try:
+        filtered_stream = Filteredstream(token, query,addr,conn)
+        filtered_stream.start_api()
+        print("query = ",query, "start",addr,conn) 
+    except Exception as ex:
+        pass
+
+
+
+if __name__ == "__main__":
+    print("start") 
+    start=time.time()
     
-    filtered_stream = Filteredstream(args.token, args.query)
-    filtered_stream.start_api()
+    ## token_list
+    with open('token_list.txt', 'r') as f:
+        token_list_txt = f.read().split(",")
+    
+    token_list =[]
+    for token in token_list_txt:
+        token=token.strip()
+        token_list.append(token)
+
+    num_of_token = len(token_list)
+    
+    # query_list
+    with open('query_list.txt', 'r') as f:
+        query_list_txt = f.read().split(",")
+    
+    query_list =[]
+    for query in query_list_txt:
+        query=query.strip()
+        query_list.append(query)
+    
+    
+    TCP_IP = "117.17.189.206"
+    TCP_PORT = 13000
+    conn = None
+    # create a socket object
+    s = socket.socket()
+    s.bind((TCP_IP, TCP_PORT))
+    s.listen(1)
+    print("listen") 
+    
+    conn, addr = s.accept()
+    
+    print(conn, addr)
+    
+    process_pool = multiprocessing.Pool(processes = num_of_token)
+    process_pool.starmap(execute, zip(token_list,query_list,repeat(conn),repeat(addr)))
+    process_pool.close()
+    process_pool.join()
+
+print("-------%s seconds -----"%(time.time()-start))

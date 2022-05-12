@@ -1,1 +1,1 @@
-russia,"russia",Ukraine,"Ukraine",Putin
+russia,ukraine,war,#russia,russian
